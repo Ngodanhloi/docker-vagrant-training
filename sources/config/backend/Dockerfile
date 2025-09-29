@@ -25,7 +25,7 @@ RUN apt-get update \
         exif \
         pdo_mysql \
         mysqli \
-        && docker-php-ext-enable pdo_mysql mysqli
+        && docker-php-ext-enable pdo_mysql
 
 RUN pecl install xdebug \
     && docker-php-ext-enable xdebug
